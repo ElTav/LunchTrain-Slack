@@ -141,16 +141,13 @@ class Station(object):
 
 
 def GetTime(message):
-	parts = message.split(' ')
-	if IsInt(parts[-1]):
-		time = int(parts[-1])
+	if IsInt(message[-1]):
+		time = int(message[-1])
 		if time <= 0:
-			return None, "Please specify a time greater than 0 mins and less than 30 mins"
-		if time > 29:
-			return None, "Slack doesn't allow responses more than 30 mins out :(. Please try again with a shorter time (29 or fewer mins)"
-		return int(parts[-1]), None
+			return None, "Please specify a time greater than 0 mins"
+		return int(message[-1]), None
 	else:
-		return None, "Couldn't parse your time to departure. Please make sure it's an int between [1, 29]"
+		return None, "Couldn't parse your time to departure. Please make sure it's an int >= 1"
 
 def IsInt(val):
 	try:
@@ -165,17 +162,18 @@ class TrainWorker(threading.Thread):
 		threading.Thread.__init__(self)
 		self.Station = station
 		self.Train = train
-
+		# Implement a separate counter (in seconds) to refresh the station more "instantaneously"
+		self.TimeRemaining = train.TimeRemaining * 60
 	def run(self):
-		while self.Train.TimeRemaining >= 0 :
-			time.sleep(15)
-			self.Train.TimeRemaining -= 1
-			if len(self.Train.Passengers) == 0:
+		while self.TimeRemaining >= 0:
+			time.sleep(1)
+			self.TimeRemaining -= 1
+			if len(self.Train.Passengers) == 0 or self.Train.MapDestination not in self.Station.Trains:
 				return
 			message = ""
-			if self.Train.TimeRemaining == 1:
+			if self.TimeRemaining == 60:
 				message = "Reminder, the next train to %s leaves in one minute" % self.Train.DisplayDestination
-			elif self.Train.TimeRemaining == 0:
+			elif self.TimeRemaining == 0:
 				message = "The train to %s has left the station with %s on it!" % (self.Train.DisplayDestination, self.Train.PassengerString())
 				self.Station.DeleteTrain(self.Train.MapDestination)
 			if message != "":
@@ -184,19 +182,20 @@ class TrainWorker(threading.Thread):
 def Handler(station, user, message):
 	message = message.split(' ')
 	command = message[0]
+	message = message[1:]
 	notFound = "Your train/destination could not be found, please try again"
-	if len(message) == 0 or command == "help":
+	if command == "help":
 		return station.HelpCommand()
-	elif command == "active" and len(message) == 1:
+	elif command == "active" and len(message) == 0:
 		return station.ActiveTrainCommand()
-	elif command == "join":
+	elif command == "join" and len(message) >= 1:
 		if len(message) == 0:
 			return notFound
 		else:
-			return station.JoinTrainCommand(user, message)
-	elif command == "start":
+			return station.JoinTrainCommand(user, ' '.join(message))
+	elif command == "start" and len(message) >= 2:
 		time, err = GetTime(message)
-		destination = message.split(' ')[:-1]
+		destination = message[:-1]
 		destination = ' '.join(destination)
 		if err is not None:
 			return err
@@ -209,7 +208,6 @@ def Handler(station, user, message):
 
 
 def PostMessage(message):
-	webhook_url = "https://hooks.slack.com/services/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"
+	webhook_url = 
 	slack_data = {'text': message, 'response_type': 'in_channel'}
 	response = requests.post(webhook_url, data=json.dumps(slack_data), headers={'Content-Type': 'application/json'})
-	print response
