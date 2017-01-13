@@ -21,23 +21,18 @@ Changelog from the HipChat version:
 Deployment setup notes:
 I'm still working on a proper deployment where it pulls the appropriate Slack webhook URL from an Environment URL, but for now this'll probably be fine
 
-1) Go to https://<slack-name>.slack.com/apps/build/custom-integration
+0) Clone the repo and replace the 'webhook_url' variable with the URL from the previous step (found at Train.py, line 211). Deploy to Heroku
+
+1) Go to https://TeamName.slack.com/apps/build/custom-integration
 
 2) Click "Add Slash Command"
 
-3) Set the command to '/train' (for continuity's sake, and that's how I set everything up anyway)
+3) Set the command to '/train' (or whatever you want)
 
-4) Configure options as follows: URL: 'https://lunchtrainv2.herokuapp.com', Method: POST, Name: 'LunchTrain', Emoji: 🚂 (I liked this one best)
+4) Configure options as follows: URL: Heroku url from step 0, Method: POST, Name: 'LunchTrain', Emoji: 🚂 (I liked this one best)
 
-5) Go back to https://<clypd-slack-name>.slack.com/apps/build/custom-integration
+5) Go back to https://TeamName.slack.com/apps/build/custom-integration
 
 6) Click "Add Incoming Webhook"
 
 7) Configure options to: Post to "Notwork" (or wherever), set Name and Emoji to the same as in Step 4. Copy the 'Webhook URL' somewhere
-
-8) Clone a copy of this repo, and replace the 'webhook_url' variable with the URL from the previous step (found at Train.py, line 211)
-
-9) Add/Commit changes, push to master, will take a few mins to auto-rebuild 
-
-10) Fingers crossed everything works, please let me know if the app crashes or you encounter any unexpected behavior. 
-I rewrote everything in an effort to learn Python & it's the first real multithreaded program I've written that's not in Go. 
